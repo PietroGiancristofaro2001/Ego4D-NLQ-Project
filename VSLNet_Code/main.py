@@ -230,8 +230,10 @@ def main(configs, parser):
 
                     score_writer.write(score_str)
                     score_writer.flush()
+                    
                     # Recall@1, 0.3 IoU overlap --> best metric.
-                    if results[0][0] >= best_metric:
+                    #Save only if we are doing training (no for pre-training)
+                    if configs.pretrain.lower() == 'no' and results[0][0] >= best_metric:
                         best_metric = results[0][0]
                         torch.save(
                             model.state_dict(),
@@ -243,7 +245,16 @@ def main(configs, parser):
                         # only keep the top-3 model checkpoints
                         filter_checkpoints(model_dir, suffix="t7", max_to_keep=3)
                     model.train()
-            
+        if configs.pretrain.lower() == 'yes':
+          print("\nPre-training finished. Saving the final checkpoint...", flush=True)
+          torch.save(
+            model.state_dict(),
+            os.path.join(
+              model_dir,
+              "{}_{}.t7".format(configs.model_name, global_step)
+            ),
+          )
+   
         score_writer.close()
 
     elif configs.mode.lower() == "test":

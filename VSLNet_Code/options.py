@@ -27,6 +27,14 @@ def read_command_line():
         default=None,
         help="Path to a checkpoint .t7 file to resume training or start fine-tuning from.",
     )
+    #Add the argument useful to save the last checkpoint of the model for pre-training
+    parser.add_argument(
+        '--pretrain',
+        type=str,
+        default='no',
+        choices=['yes', 'no'],
+        help="If 'yes', saves the last checkpoint of the training, ignoring evaluation metrics. If 'no', saves the best checkpoint based on validation performance."
+    )
     parser.add_argument("--task", type=str, default="charades", help="target task")
     parser.add_argument(
         "--eval_gt_json",
