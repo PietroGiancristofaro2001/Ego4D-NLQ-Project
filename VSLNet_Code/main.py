@@ -104,17 +104,66 @@ def main(configs, parser):
             configs=configs, word_vectors=dataset.get("word_vector", None)
         ).to(device)
 
-        #handle new argument for fine tuning
+        #3 configurations: 
+        #1. STANDARD TRAINING: pretrain == 'no'(Default) and resume_from_checkpoint == None (Default)
+        #2. PRE-TRAINING: pretrain == 'yes' and resume_from_checkpoint == None (Default)
+        #3. FINE-TUNING: pretrain == 'no' (Default) and resume_from_checkpoint == Path of last pre-training checkpoint
+        #to handle fine-tuning
+        is_special_fine_tuning = (
+          configs.resume_from_checkpoint 
+          and os.path.exists(configs.resume_from_checkpoint) 
+          and configs.pretrain.lower() == 'no'
+        )
+
+        #1. Load the checkpoint for fine-tuning
         if configs.resume_from_checkpoint and os.path.exists(configs.resume_from_checkpoint):
           print(f"Loading checkpoint for fine-tuning from: {configs.resume_from_checkpoint}", flush=True)
           try:
-            model.load_state_dict(torch.load(configs.resume_from_checkpoint, map_location=device))
+            model.load_state_dict(torch.load(configs.resume_from_checkpoint, map_location=device),strict=True)
             print("Checkpoint successfully loaded", flush=True)
 
           except Exception as e:
             print(f"ERROR during checkpoint loading: {e}", flush=True)
 
-        optimizer, scheduler = build_optimizer_and_scheduler(model, configs=configs)
+        # 2. Conditional unfreezing of BERT
+        if is_special_fine_tuning:
+          # We are in configuration 3. --> Fine-tuning
+          print("SPECIAL FINE-TUNING MODE: Unfreezing BERT parameters.", flush=True)
+          for param in model.embedding_net.embedder.parameters():
+            param.requires_grad = True
+        else:
+          # We are in configuration 1. or 2. --> Standard training or Pre-training
+          # BERT remains frozen congelato as default in layers.py
+          print("STANDARD/PRE-TRAINING MODE: BERT remains frozen.", flush=True)
+        
+        #3. Optimizer configuration
+        if is_special_fine_tuning:
+          # : Optimizer con learning rate differenziato
+          print("Setting up optimizer with differential learning rates for fine-tuning...", flush=True)
+          no_decay = ["bias", "layer_norm", "LayerNorm"]
+    
+          # Separe BERT parameters from the others
+          bert_param_ids = {id(p) for p in model.embedding_net.parameters()}
+          other_params = [p for p in model.parameters() if id(p) not in bert_param_ids]
+    
+          optimizer_grouped_parameters = [
+          {'params': [p for n, p in model.embedding_net.named_parameters() if not any(nd in n for nd in no_decay)], 'lr': configs.init_lr * 0.1, 'weight_decay': 0.01},
+          {'params': [p for n, p in model.embedding_net.named_parameters() if any(nd in n for nd in no_decay)], 'lr': configs.init_lr * 0.1, 'weight_decay': 0.0},
+          {'params': other_params, 'lr': configs.init_lr, 'weight_decay': 0.01} # Imposta un lr di default per il resto
+          ]
+          optimizer = AdamW(optimizer_grouped_parameters, lr=configs.init_lr)
+        else:
+          # Cases 1 and 2: Optimizer standard
+          print("Setting up standard optimizer.", flush=True)
+          # La funzione originale gestisce già la separazione per il weight_decay
+          optimizer, _ = build_optimizer_and_scheduler(model, configs=configs)
+
+        # 4. Scheduler creation (common to all configurations 1,2,3)
+        scheduler = get_linear_schedule_with_warmup(
+          optimizer,
+          num_warmup_steps=int(configs.num_train_steps * configs.warmup_proportion),
+          num_training_steps=configs.num_train_steps,
+        )
 
         # start training
         best_metric = -1.0

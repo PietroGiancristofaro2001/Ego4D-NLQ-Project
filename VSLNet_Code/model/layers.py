@@ -161,7 +161,7 @@ class BertEmbedding(nn.Module):
 
     def forward(self, word_ids):
         outputs = self.embedder(**word_ids)
-        return outputs["last_hidden_state"].detach()
+        return outputs["last_hidden_state"]   #.detach() 
 
 
 class PositionalEmbedding(nn.Module):
