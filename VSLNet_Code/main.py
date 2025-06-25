@@ -133,12 +133,12 @@ def main(configs, parser):
             param.requires_grad = True
         else:
           # We are in configuration 1. or 2. --> Standard training or Pre-training
-          # BERT remains frozen congelato as default in layers.py
+          # BERT remains frozen as default in layers.py
           print("STANDARD/PRE-TRAINING MODE: BERT remains frozen.", flush=True)
         
         #3. Optimizer configuration
         if is_special_fine_tuning:
-          # : Optimizer con learning rate differenziato
+          # : Optimizer with different learning rates
           print("Setting up optimizer with differential learning rates for fine-tuning...", flush=True)
           no_decay = ["bias", "layer_norm", "LayerNorm"]
     
@@ -149,13 +149,12 @@ def main(configs, parser):
           optimizer_grouped_parameters = [
           {'params': [p for n, p in model.embedding_net.named_parameters() if not any(nd in n for nd in no_decay)], 'lr': configs.init_lr * 0.1, 'weight_decay': 0.01},
           {'params': [p for n, p in model.embedding_net.named_parameters() if any(nd in n for nd in no_decay)], 'lr': configs.init_lr * 0.1, 'weight_decay': 0.0},
-          {'params': other_params, 'lr': configs.init_lr, 'weight_decay': 0.01} # Imposta un lr di default per il resto
+          {'params': other_params, 'lr': configs.init_lr, 'weight_decay': 0.01} # default lr for others
           ]
           optimizer = AdamW(optimizer_grouped_parameters, lr=configs.init_lr)
         else:
           # Cases 1 and 2: Optimizer standard
           print("Setting up standard optimizer.", flush=True)
-          # La funzione originale gestisce già la separazione per il weight_decay
           optimizer, _ = build_optimizer_and_scheduler(model, configs=configs)
 
         # 4. Scheduler creation (common to all configurations 1,2,3)
@@ -226,7 +225,7 @@ def main(configs, parser):
                 )
                 #total loss if we are using VSLbase
                 total_loss=loc_loss
-                #if we are using VSLnet we have to consider also highlight loss
+                #if we are using VSLnet we have to consider also QGH loss
                 if configs.model_type.lower() == 'vslnet':
                   highlight_loss = model.compute_highlight_loss(h_score, h_labels, video_mask)
                   total_loss += configs.highlight_lambda * highlight_loss
@@ -294,6 +293,7 @@ def main(configs, parser):
                         # only keep the top-3 model checkpoints
                         filter_checkpoints(model_dir, suffix="t7", max_to_keep=3)
                     model.train()
+        #if we are in pre-training phase sve only the last checkpoint
         if configs.pretrain.lower() == 'yes':
           print("\nPre-training finished. Saving the final checkpoint...", flush=True)
           torch.save(
