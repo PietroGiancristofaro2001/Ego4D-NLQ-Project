@@ -21,22 +21,24 @@ To enable this experimental workflow, the original codebase was modified. Key ch
 
 This repository is organized into two main parts: the `VSLNet_Code` directory and a `notebooks` directory containing the project's workflow.
 
-.
+```
+ego4d-nlq-project/
 ├── VSLNet_Code/
 │   ├── main.py              # Main script for training and evaluation (modified)
 │   ├── options.py           # Script defining configuration parameters (modified)
+│   ├── requirements.txt     # Project dependencies
+│   ├── run_train.sh         # Example bash script for training
 │   ├── model/
 │   │   ├── VSLNet.py        # VSLNet and VSLBase model definitions (modified)
 │   │   └── layers.py        # Custom layers for the architecture
-│   ├── utils/
-│   │   ├── prepare_ego4d_dataset.py # Data preprocessing script
-│   │   └── ...              # Other utility scripts
-│   ├── requirements.txt     # Project dependencies
-│   └── run_train.sh         # Example bash script for training
+│   └── utils/
+│       └── prepare_ego4d_dataset.py
+│
 └── notebooks/
-├── 01_Exploratory_Data_Analysis.ipynb
-├── 02_Training_and_Evaluation.ipynb
-└── 03_Data_Augmentation_with_LLM.ipynb
+    ├── 01_Exploratory_Data_Analysis.ipynb
+    ├── 02_Training_and_Evaluation.ipynb
+    └── 03_Data_Augmentation_with_LLM.ipynb
+```
 
 
 ## 3. Getting Started
@@ -58,6 +60,7 @@ To run this project, you need a single `.zip` archive containing all the necessa
 ## 4. How to Run the Project
 
 The entire workflow is managed through the **Google Colab notebooks** in the `/notebooks` directory. It is highly recommended to run them in a Colab environment with GPU acceleration enabled.
+The notebooks are structured in a simple way, it's only needed to run all cells sequentially.
 
 ### 4.1. Notebook 01: Exploratory Data Analysis
 
