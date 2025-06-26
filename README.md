@@ -57,6 +57,15 @@ To run this project, you need a single `.zip` archive containing all the necessa
 * Pre-extracted **Omnivore** and **EgoVLP** visual features.
 * The pre-trained GloVe word embedding file (`glove.840B.300d.txt`).
 
+### 3.3. Hugging Face LLM Setup
+
+The data augmentation pipeline uses the `meta-llama/Meta-Llama-3-8B-Instruct` model, which is a gated model on Hugging Face. To use it, you must perform the following steps:
+
+1.  **Request Access**: Visit the [Meta Llama 3 model card on Hugging Face](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct) and accept the license terms to be granted access. This usually requires a Hugging Face account linked to an email address.
+2.  **Generate Access Token**: Once access is granted, go to your Hugging Face account settings and create a new access token with at least "read" permissions.
+3.  **Log in in Colab**: When running the `03_Data_Augmentation_with_LLM.ipynb` notebook, you will be prompted to log in to your Hugging Face account. Use the access token you just generated to authenticate.
+
+
 ## 4. How to Run the Project
 
 The entire workflow is managed through the **Google Colab notebooks** in the `/notebooks` directory. It is highly recommended to run them in a Colab environment with GPU acceleration enabled.
